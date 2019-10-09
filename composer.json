@@ -1,0 +1,12 @@
+{
+    "name": "cnoss/datafixes-legacy",
+    "require": {
+        "mustache/mustache": "^2.12"
+    },
+    "authors": [
+        {
+            "name": "cnoss",
+            "email": "christian.noss@fh-koeln.de"
+        }
+    ]
+}
