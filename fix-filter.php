@@ -9,8 +9,11 @@ $globals['outFolder'] = "xml-out";
 $globals['searchItems'] = array(
   'Bucheinband', 'Devise', 'Initiale', 'Inschrift', 'Recto', 'Titelblatt', 'Verso', 'Wappen', 
   'Architekturzeichnung','Chronik', 'Entwurfszeichnung', 'Flugblatt', 'Gedenkblatt', 'Politische Karikatur', 'Presentationszeichnung', 'Probedruck', 'Vorzeichnung',
-  'Buch', 'Einblatt', 'Frontispiz', 'Gebetbuch', 'I Zustand', 'II Zustand', 'III Zustand', 'Illustriertes Buch', 'Karte', 'Serie', 'Skizzenbuch', 'Stammbuch'
-
+  'Buch', 'Einblatt', 'Frontispiz', 'Gebetbuch', 'I Zustand', 'II Zustand', 'III Zustand', 'Illustriertes Buch', 'Karte', 'Serie', 'Skizzenbuch', 'Stammbuch',
+  '1st state',
+  '2nd state',
+  '3rd state',
+  'commemorative print'
 );
 
 $globals['template'] = '<term type="Descriptor" term="{{string}}"';
