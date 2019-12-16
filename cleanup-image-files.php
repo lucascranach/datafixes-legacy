@@ -1,56 +1,72 @@
 <?php
 
-require 'vendor/mustache/mustache/src/Mustache/Autoloader.php';
-Mustache_Autoloader::register();
 
 $globals = array();
-$globals['inFolder'] = "xml-in";
-$globals['outFolder'] = "xml-out";
-$globals['searchItems'] = array(
-  'Bucheinband', 'Devise', 'Initiale', 'Inschrift', 'Recto', 'Titelblatt', 'Verso', 'Wappen', 
-  'Architekturzeichnung','Chronik', 'Entwurfszeichnung', 'Flugblatt', 'Gedenkblatt', 'Politische Karikatur', 'Presentationszeichnung', 'Probedruck', 'Vorzeichnung',
-  'Buch', 'Einblatt', 'Frontispiz', 'Gebetbuch', 'I. Zustand', 'II. Zustand', 'III. Zustand', 'Illustriertes Buch', 'Karte', 'Serie', 'Skizzenbuch', 'Stammbuch',
-  '1st state',
-  '2nd state',
-  '3rd state',
-  'commemorative print'
-);
+$globals['entryPoints'] = [];
+$globals['entryPoints']["thumbs"] = "/var/www/thumbnails";
+$globals['entryPoints']["hiRes"] = "/home/mkpacc/IIPIMAGES/";
 
-$globals['template'] = '<term type="Descriptor" term="{{string}}"';
+$remove = [];
+array_push($remove, 'PRIVATE_NONE-P039_FR391C_Overall');
+array_push($remove, 'PRIVATE_NONE-P040_FR393B_Overall');
+array_push($remove, 'PRIVATE_NONE-P065_FR-none_Overall');
+array_push($remove, 'PRIVATE_NONE-P239_FR-none_Overall');
+array_push($remove, 'PRIVATE_NONE-P240_FR-none_Overall');
+array_push($remove, 'PRIVATE_NONE-P241_FR-none_Overall');
+array_push($remove, 'PRIVATE_NONE-P245_FR-none_2006_Overall');
+array_push($remove, 'PRIVATE_NONE-P249_FR-none_2015_Overall');
+array_push($remove, 'PRIVATE_NONE-P259_FR349D_2010_Overall');
+array_push($remove, 'PRIVATE_NONE-P270_FR-none_Overall');
+array_push($remove, 'PRIVATE_NONE-P033_FR333_Overall');
+array_push($remove, 'PRIVATE_NONE-P275_FR-none_2005_Overall');
+array_push($remove, 'PRIVATE_NONE-P135_FRSup018_Overall');
+array_push($remove, 'PRIVATE_NONE-P027_FR298_Overall');
+$globals['remove'] = $remove;
 
-function readFolder($folder)
-{
-    return glob($folder . "/*.xml");
+$rename = [];
+array_push($rename, array('CH_PTSS-MAS_A671_FR-none_Overall','CH_PTSS-MAS_A671_FR-none_Overall-002'));
+array_push($rename, array('IT_GNAAT_18_FR409D_Overall','IT_GNAAT_18_FR409D_Overall-001'));
+array_push($rename, array('US_artic_1935-294_FR197_Overall','US_artic_1935-294_FR197_Overall-001'));
+array_push($rename, array('US_artic_1935-295_FR197Overall','US_artic_1935-295_FR197Overall-001'));
+array_push($rename, array('PRIVATE_NONE-P272_FR-none_Overall','PRIVATE_NONE-P272_FR-none_Overall-001'));
+array_push($rename, array('PRIVATE_NONE-P275_FR-none_2005_Overall-001','PRIVATE_NONE-P275_FR-none_2005_Overall-002'));
+array_push($rename, array('PRIVATE_NONE-P064_FR040_Overall','PRIVATE_NONE-P064_FR040_Overall-001'));
+array_push($rename, array('PRIVATE_NONE-P213_FR416_Overall','PRIVATE_NONE-P213_FR416_Overall-001'));
+array_push($rename, array('PRIVATE_NONE-P185_FR-none_2008_Overall','PRIVATE_NONE-P185_FR-none_2008_Overall-002'));
+array_push($rename, array('PRIVATE_NONE-P006_FR054_Overall','PRIVATE_NONE-P006_FR054_Overall-001'));
+array_push($rename, array('DE_HHK_NONE-001_FR306_Overall','DE_HHK_NONE-001_FR306_Overall-001'));
+array_push($rename, array('DE_HHK_NONE-002_FR307_Overall','DE_HHK_NONE-002_FR307_Overall-001'));
+array_push($rename, array('PRIVATE_NONE-P043_FR413A_Overall','PRIVATE_NONE-P043_FR-none_Overall'));
+array_push($rename, array('PRIVATE_NONE-P043_FR413A_RKD_Overall-001v','PRIVATE_NONE-P043_FR-none_RKD_Overall-001v'));
+array_push($rename, array('PRIVATE_NONE-P043_FR413A_RKD_Overall-001r','PRIVATE_NONE-P043_FR-none_RKD_Overall-001r'));
+$globals['rename'] = $rename;
+
+foreach($globals['entryPoints'] as $entryPoint){
+
+  foreach($globals['remove'] as $item){
+    $cmd = "find " . $entryPoint ." -name '$item.*'";
+    $files = array();
+    print "Searching for $item.*\n";
+    exec($cmd, $files);
+    foreach($files as $file){
+      print "  Remove $file\n";
+      unlink($file);
+    }
+  }
+
+  foreach($globals['rename'] as $item){
+    $source = $item[0];
+    $target = $item[1];
+    $cmd = "find " . $entryPoint ." -name '$source.*'";
+    $files = array();
+    print "\nSearching for $source.*\n";
+    exec($cmd, $files);
+    foreach($files as $sourceFile){
+      $targetFile = preg_replace("=$source=", $target, $sourceFile);
+      print "  Rename:\n\t$sourceFile\n\t$targetFile\n";
+      rename($sourceFile, $targetFile);
+    }
+  }
 }
 
-$files = readFolder($globals['inFolder']);
-
-print "\nWas soll gemacht werden?\n";
-$x = 1;
-foreach ($files as $file) {
-    print "[$x] $file\n";
-    $x++;
-}
-print "[x] abbrechen\n";
-
-$input = intval(chop(readline("Command: ")));
-if($input == NULL){ exit; }
-
-$path = $files[$input-1];
-$xml = file_get_contents($path);
-
-$m = new Mustache_Engine;
-foreach($globals['searchItems'] as $searchItem){
-  $pattern =  preg_quote($m->render($globals['template'], array('string' => $searchItem)), '=');
-  $xml = preg_replace(
-    "=$pattern.*?\/term>=is",
-    '',
-    $xml
-  );
-}
-
-$filename = basename($path);
-$target = $globals['outFolder']. '/' . $filename;
-file_put_contents($target, $xml);
-
-print "\nFertig: $target\n\n";
+print "\nfertig :)\n\n";
