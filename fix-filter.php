@@ -66,6 +66,88 @@ applyFunctionOnNodeRecursivly(function($node) use ($globals) {
   }
 }, $dom->documentElement);
 
+
+function filterByDKultType(array $nodes): array {
+  $matchingTypeVal = 'dkult Term Identifier';
+
+  return array_filter($nodes, function($node) use($matchingTypeVal) {
+    if (!$node->hasAttributes()) {
+      return false;
+    }
+
+    $typeAttr = $node->attributes->getNamedItem('type');
+
+    if (is_null($typeAttr)) {
+      return false;
+    }
+
+    return trim($typeAttr->value) === $matchingTypeVal;
+  });
+}
+
+function extractDKultIdentifier(DomNode $node) {
+  if (!$node->hasAttributes() || $node->nodeName !== 'alt-term') {
+    return null;
+  }
+
+  $termAttr = $node->attributes->getNamedItem('term');
+
+  if (is_null($termAttr)) {
+    return null;
+  }
+
+  return trim($termAttr->value);
+}
+
+function getDKultIdentifier(DomNode $node) {
+  $childNodes = iterator_to_array($node->childNodes);
+  $altTermNodes = array_filter($childNodes, function($node) { return $node->nodeName === 'alt-term'; });
+  $dkultNodes = filterByDKultType($altTermNodes);
+
+  return count($dkultNodes) === 1 ? extractDKultIdentifier(current($dkultNodes)) : null;
+}
+
+function sortNodesByDKultIdentifier(DomNode $nodeA, DomNode $nodeB) {
+  $nodeAIdentifier = getDKultIdentifier($nodeA);
+  $nodeBIdentifier = getDKultIdentifier($nodeB);
+
+  if (is_null($nodeAIdentifier)) {
+    if (is_null($nodeBIdentifier)) {
+      return 0;
+    } else {
+      return 1;
+    }
+  } else {
+    if (is_null($nodeBIdentifier)) {
+      return -1;
+    }
+
+    return $nodeAIdentifier - $nodeBIdentifier;
+  }
+}
+
+function reappendNodesToTheirParent(array $childNodes) {
+  foreach($childNodes as $childNode) {
+    $childNode->parentNode->appendChild($childNode->parentNode->removeChild($childNode));
+  }
+}
+
+/* sorting elements by dKult Identifier */
+applyFunctionOnNodeRecursivly(function($node, $depth) {
+  if (!$node->hasAttributes() || !$node->hasChildNodes()) {
+    return;
+  }
+
+  $childNodes = iterator_to_array($node->childNodes);
+
+  $termNodes = array_filter($childNodes, function($node) { return $node->nodeName === 'term'; });
+
+  usort($termNodes, 'sortNodesByDKultIdentifier');
+
+  reappendNodesToTheirParent($termNodes);
+}, $dom->documentElement);
+
+
 $filename = basename($path);
 $target = $globals['outFolder']. '/' . $filename;
 $xmlOutput = str_replace('<?xml version="1.0"?>' . "\n", '', trim($dom->saveXML()));
